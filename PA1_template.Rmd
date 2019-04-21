@@ -5,21 +5,118 @@ output:
     keep_md: true
 ---
 
-
-## Loading and preprocessing the data
-
-
-
-## What is mean total number of steps taken per day?
+Personal activity monitoring
+============================
 
 
+### Downloading and unzipping the data
+Lets see if its downloaded already, if not lets do so.
+```{r, cache =TRUE}
+library(ggplot2)
 
-## What is the average daily activity pattern?
+destfile="./data.zip"
+if(!file.exists(destfile)){
+      url <- "http://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip"
+      download.file(url, destfile = "./data.zip")
+}
+unzip("./data.zip")
 
 
+```
+###data processing
 
-## Imputing missing values
+Now we read the data to a data frame. then we summarize the data with summary, its string representation and the header.
+```{r, cache=F}
+data <- read.table(file = "activity.csv", header = TRUE, sep = ",", nrows =  17568, na.strings = NA)
+summary(data)
+str(data)
+head(data)
+```
+ 
+now we transform the date to the YYYY-MM-DD format
+```{r, cache = F}
+data$date <- as.Date(data$date, "%Y-%m-%d")
+class(data$date)
+head (data$date)
+```
+
+## Assignment questions
+### 1. What is mean total number of steps taken per day?
+
+1. calculate the number of steps per day
+```{r, cache=F}
+steps_per_day <- with(data, tapply(steps, date, sum, na.rm = TRUE))
+str (steps_per_day)
+head (steps_per_day)
+```
+
+Now we make a histogram and print out the mean and median of the total number of steps taken each day.
+```{r, cache = F}
+
+hist(steps_per_day, xlab = "Total steps per day", col = "red", main = "Total steps taken each day (ignore missing data)")
 
 
+mean_steps_per_day<-mean(steps_per_day)
+median_steps_per_day<-median(steps_per_day)
+mean_steps_per_day
+median_steps_per_day
+```
+### 2. What is the average daily activity pattern?
 
-## Are there differences in activity patterns between weekdays and weekends?
+First, we need to calculate the average number of steps taken per each 5-minutes interval (averaged across all days). Then we make a plot of intervals and the average numbers of steps taken.
+```{r, cache = F}
+steps_per_interval =  with(data, tapply(steps, interval, mean, na.rm = TRUE))
+plot(unique(data$interval), steps_per_interval, type = "l", xlab = "5-minute interval", ylab = "steps per interval averaged over all days", main = "Average daily activity")
+```
+
+The 5 minute interval which on average contains the most steps
+```{r, cache = F}
+names (which(steps_per_interval==max(steps_per_interval)))
+```
+
+### 3. Inputing missing values 
+1. report the number of NAs
+```{r, cache=F}
+sum(is.na(data))
+```
+
+Well change the missing values with the mean of the number of steps for that 5 minute interval, and place it into a copy of the original data called data2
+```{r, cache=F}
+data2 <- data
+data2$steps_per_interval =  with(data2, tapply(steps, interval, mean, na.rm = TRUE))
+data2[is.na(data2$steps),]$steps <- data2[is.na(data2$steps),]$steps_per_interval
+head(data2)
+```
+We will now redraw the histogram to see how changing the NAs into mean values and see how it impacts the graph.
+
+```{r, cache = F}
+steps_per_day_2 <- with(data2, tapply(steps, date, sum, na.rm = T))
+hist(steps_per_day_2, xlab = "Total number of steps per day", col = "wheat2", main = "Total number of steps taken each day (with filled missing data)")
+mean(steps_per_day_2)
+median(steps_per_day_2)
+```
+we can see the histogram has been skewed towards the mean of the number of steps now, instead of being skewed to zero steps
+
+### 4. Are there differences in activity patterns between business days and weekends?
+
+Add a new "weekday" column:
+
+```{r}
+data2$weekday = weekdays(strptime(data2$date,"%Y-%m-%d"))
+```
+
+subset the data2 data frame into weekend and weekday
+
+```{r}
+data_weekdays <- subset(subset(data2,weekday != 'Saturday'),weekday != 'Sunday')
+data_weekends <- rbind(subset(data2,weekday == 'Saturday'),subset(data2,weekday == 'Sunday'))
+```
+
+Make a panel plot:
+
+```{r}
+par(mfrow=c(2,1))
+with(aggregate(steps ~ interval, data_weekends, mean),plot(interval,steps,type="l",main="Weekend"))
+with(aggregate(steps ~ interval, data_weekdays, mean),plot(interval,steps,type="l",main="Weekday"))
+     
+```
