@@ -91,7 +91,7 @@ We will now redraw the histogram to see how changing the NAs into mean values an
 
 ```{r, cache = F}
 steps_per_day_2 <- with(data2, tapply(steps, date, sum, na.rm = T))
-hist(steps_per_day_2, xlab = "Total number of steps per day", col = "wheat2", main = "Total number of steps taken each day (with filled missing data)")
+hist(steps_per_day_2, breaks=61,xlab = "Total number of steps per day", col = "wheat2", main = "Total number of steps taken each day (with filled missing data)")
 mean(steps_per_day_2)
 median(steps_per_day_2)
 ```
