@@ -1,0 +1,2 @@
+## [1] "9354.22950819672  mean steps per day"
+## [1] "10395 median steps per day"
